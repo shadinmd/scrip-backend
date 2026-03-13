@@ -1,5 +1,6 @@
 clone:
   git:
+    image: woodpeckerci/plugin-git
     settings:
       depth: 0
 
@@ -29,7 +30,7 @@ steps:
           - k8s/**
 
   - name: update-manifest-dev
-    image: git
+    image: alpine/git
     environment:
       GIT_TOKEN:
         from_secret: docker_password
@@ -50,7 +51,7 @@ steps:
           - k8s/**
 
   - name: update-manifest-prod
-    image: git
+    image: alpine/git
     environment:
       GIT_TOKEN:
         from_secret: docker_password
