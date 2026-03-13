@@ -34,7 +34,7 @@ steps:
       - "git config --global user.name ci-bot"
       - "sed -i 's|image: ghcr.io/shadinmd/scrip-backend:.*|image: ghcr.io/shadinmd/scrip-backend:${CI_COMMIT_SHA}|' k8s/dev/deployment.yaml"
       - "git commit -am 'dev: update image to ${CI_COMMIT_SHA}' || echo 'no changes'"
-      - "git push https://$${GIT_TOKEN}@github.com/shadinmd/scrip.git HEAD:${CI_COMMIT_BRANCH}"
+      - "git push https://$${GIT_TOKEN}@github.com/shadinmd/scrip-backend.git HEAD:${CI_COMMIT_BRANCH}"
     when:
       event:
         - push
@@ -56,7 +56,7 @@ steps:
       - "git config --global user.name ci-bot"
       - "sed -i 's|image: ghcr.io/shadinmd/scrip-backend:.*|image: ghcr.io/shadinmd/scrip-backend:${CI_COMMIT_SHA}|' k8s/prod/deployment.yaml"
       - "git commit -am 'prod: update image to ${CI_COMMIT_SHA}' || echo 'no changes'"
-      - "git push https://$${GIT_TOKEN}@github.com/shadinmd/scrip.git HEAD:${CI_COMMIT_BRANCH}"
+      - "git push https://$${GIT_TOKEN}@github.com/shadinmd/scrip-backend.git HEAD:${CI_COMMIT_BRANCH}"
     when:
       event:
         - push
