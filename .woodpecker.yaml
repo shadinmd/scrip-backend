@@ -18,7 +18,7 @@ steps:
         - manual
       branch:
         - main
-        - stable
+        - dev
       path:
         exclude:
           - k8s/**
@@ -39,7 +39,7 @@ steps:
         - push
         - manual
       branch:
-        - main
+        - dev
       path:
         exclude:
           - k8s/**
@@ -60,7 +60,7 @@ steps:
         - push
         - manual
       branch:
-        - stable
+        - main
       path:
         exclude:
           - k8s/**
