@@ -5,7 +5,7 @@ metadata:
   namespace: scrip-dev
 spec:
   selector:
-    app: backend
+    app: scrip-backend
   ports:
     - protocol: TCP
       port: 80
