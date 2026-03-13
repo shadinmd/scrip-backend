@@ -1,0 +1,40 @@
+{
+  "name": "backend",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --watch index.ts",
+    "migration:generate": "bunx --bun typeorm migration:generate -d ./config/data-source.ts",
+    "migration:run": "bunx --bun typeorm migration:run -d ./config/data-source.ts",
+    "migration:revert": "bunx --bun typeorm migration:revert -d ./config/data-source.ts",
+    "seed:categories": "bun run scripts/seed-categories.ts",
+    "seed:test-data": "bun run scripts/seed-test-data.ts",
+    "db:clear": "bun run scripts/clear-db.ts"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/bun": "latest",
+    "@types/cors": "^2.8.19",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "bcrypt": "^6.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "ts-node": "^10.9.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@types/express": "^5.0.6",
+    "cors": "^2.8.6",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
+    "express": "^5.2.1",
+    "morgan": "^1.10.1",
+    "pg": "^8.20.0",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.28",
+    "zod": "^4.3.6"
+  }
+}
