@@ -17,7 +17,7 @@ spec:
         - name: ghcr-secret
       containers:
         - name: backend
-          image: ghcr.io/shadinmd/scrip-backend:e1411e7626ba92ec1861a0be0d1babba4359824f
+          image: ghcr.io/shadinmd/scrip-backend:d967ad91863ee1308f1e649115ae0c624fec1252
           ports:
             - containerPort: 8000
           env:
