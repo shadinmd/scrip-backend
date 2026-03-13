@@ -1,9 +1,3 @@
-clone:
-  git:
-    image: woodpeckerci/plugin-git
-    settings:
-      depth: 0
-
 steps:
   - name: build-and-push
     image: quay.io/thegeeklab/wp-docker-buildx
@@ -35,6 +29,7 @@ steps:
       GIT_TOKEN:
         from_secret: docker_password
     commands:
+      - "git fetch --unshallow || git fetch --depth=1000"
       - "git config --global user.email ci@scrip-backend.local"
       - "git config --global user.name ci-bot"
       - "sed -i 's|image: ghcr.io/shadinmd/scrip-backend:.*|image: ghcr.io/shadinmd/scrip-backend:${CI_COMMIT_SHA}|' k8s/dev/deployment.yaml"
@@ -56,6 +51,7 @@ steps:
       GIT_TOKEN:
         from_secret: docker_password
     commands:
+      - "git fetch --unshallow || git fetch --depth=1000"
       - "git config --global user.email ci@scrip-backend.local"
       - "git config --global user.name ci-bot"
       - "sed -i 's|image: ghcr.io/shadinmd/scrip-backend:.*|image: ghcr.io/shadinmd/scrip-backend:${CI_COMMIT_SHA}|' k8s/prod/deployment.yaml"
