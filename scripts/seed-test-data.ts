@@ -43,7 +43,7 @@ const seedTestData = async () => {
     await transactionRepository.delete({ userId: user.id });
     console.log("Cleared existing transactions for test user.");
 
-    // 4. Generate Transactions: 2 per day for last 90 days
+    // 4. Generate Transactions: 2 per day for last 90 days (roughly 3 months)
     const transactionsToCreate: any[] = [];
     const totalDays = 90;
     const today = new Date();
@@ -57,8 +57,8 @@ const seedTestData = async () => {
         const category =
           categories[Math.floor(Math.random() * categories.length)];
         transactionsToCreate.push({
-          amount: Math.floor(Math.random() * 100) + 5,
-          description: `Daily Transaction ${t} on ${dateString}`,
+          amount: Math.floor(Math.random() * 500) + 50, // Slightly higher random amounts
+          description: `Transaction ${t} on ${dateString}`,
           date: dateString,
           category: category,
           userId: user.id,
@@ -71,7 +71,7 @@ const seedTestData = async () => {
     await transactionRepository.save(createdTransactions);
 
     console.log(
-      `Successfully seeded ${createdTransactions.length} transactions for the last ${totalDays} days ending today (${TIMEZONE}).`,
+      `Successfully seeded ${createdTransactions.length} transactions for the last 90 days ending today (${TIMEZONE}).`,
     );
     process.exit(0);
   } catch (error) {
