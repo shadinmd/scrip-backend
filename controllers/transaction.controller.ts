@@ -77,6 +77,80 @@ export const getTransactions = async (req: Request, res: Response) => {
   }
 };
 
+export const getSummary = async (req: Request, res: Response) => {
+  try {
+    const today = new Date();
+    // Use UTC for simplicity or handle timezone if needed.
+    // For now, let's just get the last 30 days and calculate current month in memory or via SQL.
+    
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const startOfMonthStr = `${startOfMonth.getFullYear()}-${String(startOfMonth.getMonth() + 1).padStart(2, "0")}-01`;
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(today.getDate() - 6);
+    const sevenDaysAgoStr = `${sevenDaysAgo.getFullYear()}-${String(sevenDaysAgo.getMonth() + 1).padStart(2, "0")}-${String(sevenDaysAgo.getDate()).padStart(2, "0")}`;
+
+    const userId = req.user!.id;
+
+    // 1. Current Month Expenses
+    const monthTransactions = await transactionRepository.find({
+      where: {
+        userId,
+        date: MoreThanOrEqual(startOfMonthStr),
+      },
+    });
+
+    const monthExpenses = monthTransactions.reduce(
+      (sum, t) => sum + Math.abs(parseFloat(t.amount)),
+      0
+    );
+
+    // 2. Last 7 days activity
+    const last7DaysTransactions = await transactionRepository.find({
+      where: {
+        userId,
+        date: MoreThanOrEqual(sevenDaysAgoStr),
+      },
+    });
+
+    const dailyActivity = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(today.getDate() - i);
+      const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      
+      const dayTotal = last7DaysTransactions
+        .filter(t => t.date === dStr)
+        .reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+      
+      dailyActivity.push({
+        date: dStr,
+        total: dayTotal
+      });
+    }
+
+    // 3. Recent 5 transactions
+    const recentTransactions = await transactionRepository.find({
+      where: { userId },
+      relations: ["category"],
+      order: { date: "DESC", createdAt: "DESC" },
+      take: 5,
+    });
+
+    res.json({
+      currentMonth: {
+        expenses: monthExpenses,
+        count: monthTransactions.length,
+      },
+      dailyActivity,
+      recentTransactions,
+    });
+  } catch (error) {
+    console.error("Summary error:", error);
+    res.status(500).json({ message: "Something went wrong" });
+  }
+};
+
 export const getTransaction = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getTransactions,
+  getSummary,
   getTransaction,
   createTransaction,
   updateTransaction,
@@ -23,6 +24,7 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/", validate(getTransactionsQuerySchema), getTransactions);
+router.get("/summary", getSummary);
 router.get("/:id", validate(getTransactionSchema), getTransaction);
 router.post("/", validate(createTransactionSchema), createTransaction);
 router.put("/:id", validate(updateTransactionSchema), updateTransaction);
