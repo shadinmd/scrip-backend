@@ -23,6 +23,9 @@ export class User {
   @Column({ name: "token_version", default: 0 })
   tokenVersion!: number;
 
+  @Column({ name: "fcm_token", nullable: true })
+  fcmToken?: string;
+
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;
 
