@@ -35,8 +35,8 @@ export const authMiddleware = async (
       ],
     });
 
-    if (!user) {
-      return res.status(401).json({ message: "User not found" });
+    if (!user || user.tokenVersion !== payload.tokenVersion) {
+      return res.status(401).json({ message: "Invalid or expired token" });
     }
 
     req.user = user;

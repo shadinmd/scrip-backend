@@ -47,7 +47,11 @@ export const createTransactionSchema = z.object({
     amount: z.number().positive("Amount must be a positive number"),
     description: z.string().min(1, "Description is required"),
     date: z.string().date("Invalid date format (YYYY-MM-DD)"),
-    categoryId: z.number().int().positive("Valid Category ID is required").optional(),
+    categoryId: z
+      .number()
+      .int()
+      .positive("Valid Category ID is required")
+      .optional(),
   }),
 });
 

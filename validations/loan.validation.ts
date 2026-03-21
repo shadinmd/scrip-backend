@@ -7,19 +7,60 @@ export const installmentSchema = z.object({
 });
 
 export const createLoanSchema = z.object({
-  body: z.object({
-    name: z.string().min(1, "Loan name is required"),
-    installments: z.array(installmentSchema).min(1, "At least one installment is required"),
-  }),
+  body: z
+    .object({
+      name: z.string().min(1, "Loan name is required"),
+      installments: z
+        .array(installmentSchema)
+        .min(1, "At least one installment is required"),
+    })
+    .superRefine((data, ctx) => {
+      const months = data.installments.map((inst) => inst.date.substring(0, 7));
+      const hasDuplicateMonths = months.some(
+        (month, index) => months.indexOf(month) !== index,
+      );
+
+      if (hasDuplicateMonths) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Each installment must be in a different month",
+          path: ["installments"],
+        });
+      }
+    }),
 });
 
 export const updateLoanSchema = z.object({
   params: z.object({
     id: z.string().regex(/^\d+$/, "ID must be a number"),
   }),
-  body: z.object({
-    name: z.string().min(1, "Loan name is required").optional(),
-  }),
+  body: z
+    .object({
+      name: z.string().min(1, "Loan name is required").optional(),
+      installments: z
+        .array(installmentSchema)
+        .min(1, "At least one installment is required")
+        .optional(),
+    })
+    .superRefine((data, ctx) => {
+      if (data.installments) {
+        // Extract YYYY-MM from each date
+        const months = data.installments.map((inst) =>
+          inst.date.substring(0, 7),
+        );
+        const hasDuplicateMonths = months.some(
+          (month, index) => months.indexOf(month) !== index,
+        );
+
+        if (hasDuplicateMonths) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Each installment must be in a different month",
+            path: ["installments"],
+          });
+        }
+      }
+    }),
 });
 
 export const getLoanSchema = z.object({

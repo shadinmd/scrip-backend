@@ -48,7 +48,10 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const accessToken = signAccessToken({ userId: user.id });
+    const accessToken = signAccessToken({
+      userId: user.id,
+      tokenVersion: user.tokenVersion,
+    });
     const refreshToken = signRefreshToken({
       userId: user.id,
       tokenVersion: user.tokenVersion,
@@ -76,7 +79,10 @@ export const refresh = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Invalid refresh token" });
     }
 
-    const accessToken = signAccessToken({ userId: user.id });
+    const accessToken = signAccessToken({
+      userId: user.id,
+      tokenVersion: user.tokenVersion,
+    });
     const newRefreshToken = signRefreshToken({
       userId: user.id,
       tokenVersion: user.tokenVersion,

@@ -20,7 +20,7 @@ export class LoanInstallment {
   @Column({ type: "date" })
   date!: string;
 
-  @Column({ default: false })
+  @Column({ default: false, name: "is_paid" })
   isPaid!: boolean;
 
   @Column({ name: "loan_id" })
