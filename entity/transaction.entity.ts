@@ -9,6 +9,7 @@ import {
 } from "typeorm";
 import { User } from "./user.entity";
 import { Category } from "./category.entity";
+import { Account } from "./account.entity";
 
 @Entity("transactions")
 export class Transaction {
@@ -17,6 +18,13 @@ export class Transaction {
 
   @Column({ type: "decimal", precision: 10, scale: 2 })
   amount!: number;
+
+  @Column({
+    type: "varchar",
+    length: 10,
+    default: "debit",
+  })
+  type!: "debit" | "credit";
 
   @Column()
   description!: string;
@@ -32,6 +40,15 @@ export class Transaction {
   })
   @JoinColumn({ name: "category_id" })
   category?: Category | null;
+
+  @Column({ name: "account_id" })
+  accountId!: number;
+
+  @ManyToOne(() => Account, (account) => account.transactions, {
+    nullable: false,
+  })
+  @JoinColumn({ name: "account_id" })
+  account!: Account;
 
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;

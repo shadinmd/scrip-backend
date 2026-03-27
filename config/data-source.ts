@@ -5,6 +5,7 @@ import { Transaction } from "../entity/transaction.entity";
 import { Category } from "../entity/category.entity";
 import { LoanInstallment } from "../entity/loan-installment.entity";
 import { Loan } from "../entity/loan.entity";
+import { Account } from "../entity/account.entity";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -21,7 +22,7 @@ export const AppDataSource = new DataSource({
       : false,
   synchronize: false,
   logging: true,
-  entities: [User, Transaction, Category, Loan, LoanInstallment],
+  entities: [User, Transaction, Category, Loan, LoanInstallment, Account],
   subscribers: [],
   migrations: [__dirname + "/../migrations/**/*.ts"],
 });

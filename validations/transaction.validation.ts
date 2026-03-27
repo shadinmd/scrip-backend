@@ -39,12 +39,19 @@ export const getTransactionsQuerySchema = z.object({
       .regex(/^\d+$/, "categoryId must be a number")
       .optional(),
     categoryIds: z.union([z.string(), z.array(z.string())]).optional(),
+    accountId: z
+      .string()
+      .regex(/^\d+$/, "accountId must be a number")
+      .optional(),
   }),
 });
 
 export const createTransactionSchema = z.object({
   body: z.object({
     amount: z.number().positive("Amount must be a positive number"),
+    type: z.enum(["debit", "credit"], {
+      errorMap: () => ({ message: "Type must be either 'debit' or 'credit'" }),
+    }),
     description: z.string().min(1, "Description is required"),
     date: z.string().date("Invalid date format (YYYY-MM-DD)"),
     categoryId: z
@@ -52,6 +59,7 @@ export const createTransactionSchema = z.object({
       .int()
       .positive("Valid Category ID is required")
       .optional(),
+    accountId: z.number().int().positive("Account ID is required"),
   }),
 });
 
@@ -61,6 +69,7 @@ export const updateTransactionSchema = z.object({
   }),
   body: z.object({
     amount: z.number().positive("Amount must be a positive number").optional(),
+    type: z.enum(["debit", "credit"]).optional(),
     description: z.string().min(1, "Description is required").optional(),
     date: z.string().date("Invalid date format (YYYY-MM-DD)").optional(),
     categoryId: z
@@ -68,6 +77,11 @@ export const updateTransactionSchema = z.object({
       .int()
       .positive("Valid Category ID is required")
       .nullable()
+      .optional(),
+    accountId: z
+      .number()
+      .int()
+      .positive("Valid Account ID is required")
       .optional(),
   }),
 });

@@ -3,8 +3,11 @@ import { AppDataSource } from "../config/data-source";
 import { User } from "../entity/user.entity";
 import { Transaction } from "../entity/transaction.entity";
 import { Category } from "../entity/category.entity";
+import { Account } from "../entity/account.entity";
+import { Loan } from "../entity/loan.entity";
+import { LoanInstallment } from "../entity/loan-installment.entity";
 import { formatInTimeZone } from "date-fns-tz";
-import { subDays } from "date-fns";
+import { subDays, addMonths, format } from "date-fns";
 
 const TIMEZONE = "Asia/Kolkata";
 
@@ -16,6 +19,8 @@ const seedTestData = async () => {
     const userRepository = AppDataSource.getRepository(User);
     const transactionRepository = AppDataSource.getRepository(Transaction);
     const categoryRepository = AppDataSource.getRepository(Category);
+    const accountRepository = AppDataSource.getRepository(Account);
+    const loanRepository = AppDataSource.getRepository(Loan);
 
     // 1. Create or Find Test User
     let user = await userRepository.findOneBy({ email: "test@example.com" });
@@ -39,40 +44,108 @@ const seedTestData = async () => {
       process.exit(1);
     }
 
-    // 3. Clear existing transactions for this user for fresh seeding
+    // 3. Clear existing data for this user for fresh seeding
+    // We do this in order to avoid foreign key constraint issues if any
     await transactionRepository.delete({ userId: user.id });
-    console.log("Cleared existing transactions for test user.");
+    await loanRepository.delete({ userId: user.id });
+    await accountRepository.delete({ userId: user.id });
+    console.log("Cleared existing data for test user.");
 
-    // 4. Generate Transactions: 2 per day for last 90 days (roughly 3 months)
+    // 4. Create Test Accounts
+    const mainAccount = accountRepository.create({
+      name: "Main Savings",
+      balance: 50000,
+      isDefault: true,
+      userId: user.id,
+    });
+    const secondaryAccount = accountRepository.create({
+      name: "Credit Card",
+      balance: 10000,
+      isDefault: false,
+      userId: user.id,
+    });
+    await accountRepository.save([mainAccount, secondaryAccount]);
+    console.log("Created test accounts.");
+
+    // 5. Generate Transactions: 2 per day for last 90 days
     const transactionsToCreate: any[] = [];
     const totalDays = 90;
     const today = new Date();
+    let totalSpent = 0;
+    let totalIncome = 0;
 
     for (let i = 0; i < totalDays; i++) {
       const currentDate = subDays(today, i);
       const dateString = formatInTimeZone(currentDate, TIMEZONE, "yyyy-MM-dd");
 
-      // 2 transactions per day
+      // Daily Expenses
       for (let t = 1; t <= 2; t++) {
-        const category =
-          categories[Math.floor(Math.random() * categories.length)];
+        const category = categories[Math.floor(Math.random() * categories.length)];
+        const amount = Math.floor(Math.random() * 500) + 50;
+        totalSpent += amount;
+
         transactionsToCreate.push({
-          amount: Math.floor(Math.random() * 500) + 50, // Slightly higher random amounts
-          description: `Transaction ${t} on ${dateString}`,
+          amount: amount,
+          type: "debit",
+          description: `Expense ${t} on ${dateString}`,
           date: dateString,
           category: category,
+          accountId: mainAccount.id,
+          userId: user.id,
+        });
+      }
+
+      // Monthly Salary (Credit)
+      if (i % 30 === 0) {
+        const salaryAmount = 50000;
+        totalIncome += salaryAmount;
+        transactionsToCreate.push({
+          amount: salaryAmount,
+          type: "credit",
+          description: `Salary for month ${i / 30 + 1}`,
+          date: dateString,
+          category: categories.find((c) => c.name === "Salary") || categories[0],
+          accountId: mainAccount.id,
           userId: user.id,
         });
       }
     }
 
-    const createdTransactions =
-      transactionRepository.create(transactionsToCreate);
+    const createdTransactions = transactionRepository.create(transactionsToCreate);
     await transactionRepository.save(createdTransactions);
 
-    console.log(
-      `Successfully seeded ${createdTransactions.length} transactions for the last 90 days ending today (${TIMEZONE}).`,
-    );
+    // Update account balance after transactions
+    mainAccount.balance =
+      parseFloat(mainAccount.balance.toString()) + totalIncome - totalSpent;
+    await accountRepository.save(mainAccount);
+
+    console.log(`Successfully seeded ${createdTransactions.length} transactions.`);
+
+    // 6. Seed Two Loans
+    const loan1 = loanRepository.create({
+      name: "Car Loan",
+      userId: user.id,
+      installments: [
+        { amount: 5000, date: format(subDays(today, 30), "yyyy-MM-dd"), isPaid: true },
+        { amount: 5000, date: format(today, "yyyy-MM-dd"), isPaid: false },
+        { amount: 5000, date: format(addMonths(today, 1), "yyyy-MM-dd"), isPaid: false },
+        { amount: 5000, date: format(addMonths(today, 2), "yyyy-MM-dd"), isPaid: false },
+      ],
+    });
+
+    const loan2 = loanRepository.create({
+      name: "Home Mortgage",
+      userId: user.id,
+      installments: [
+        { amount: 15000, date: format(subDays(today, 15), "yyyy-MM-dd"), isPaid: true },
+        { amount: 15000, date: format(addMonths(today, 1), "yyyy-MM-dd"), isPaid: false },
+        { amount: 15000, date: format(addMonths(today, 2), "yyyy-MM-dd"), isPaid: false },
+      ],
+    });
+
+    await loanRepository.save([loan1, loan2]);
+    console.log("Successfully seeded 2 loans with installments.");
+
     process.exit(0);
   } catch (error) {
     console.error("Error during test data seeding:", error);
