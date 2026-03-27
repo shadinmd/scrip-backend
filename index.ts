@@ -8,6 +8,7 @@ import userRouter from "./routers/user.route";
 import categoryRouter from "./routers/category.route";
 import transactionsRouter from "./routers/transactions.route";
 import loanRouter from "./routers/loan.route";
+import accountRouter from "./routers/account.route";
 
 AppDataSource.initialize()
   .then(() => {
@@ -29,6 +30,7 @@ AppDataSource.initialize()
     app.use("/api/categories", categoryRouter);
     app.use("/api/transactions", transactionsRouter);
     app.use("/api/loans", loanRouter);
+    app.use("/api/accounts", accountRouter);
 
     app.use(errorHandler);
 
