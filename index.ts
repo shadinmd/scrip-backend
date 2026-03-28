@@ -9,10 +9,13 @@ import categoryRouter from "./routers/category.route";
 import transactionsRouter from "./routers/transactions.route";
 import loanRouter from "./routers/loan.route";
 import accountRouter from "./routers/account.route";
+import { initCronJobs } from "./utils/cron";
 
 AppDataSource.initialize()
   .then(() => {
     console.log("Database connected");
+
+    initCronJobs();
 
     const app = express();
 

@@ -85,8 +85,6 @@ export const getTransactions = async (req: Request, res: Response) => {
 export const getSummary = async (req: Request, res: Response) => {
   try {
     const today = new Date();
-    // Use UTC for simplicity or handle timezone if needed.
-    // For now, let's just get the last 30 days and calculate current month in memory or via SQL.
 
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const startOfMonthStr = `${startOfMonth.getFullYear()}-${String(startOfMonth.getMonth() + 1).padStart(2, "0")}-01`;
