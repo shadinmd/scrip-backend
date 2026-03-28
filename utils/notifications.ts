@@ -1,4 +1,4 @@
-import { Expo, ExpoPushMessage } from "expo-server-sdk";
+import { Expo, type ExpoPushMessage } from "expo-server-sdk";
 
 const expo = new Expo();
 
@@ -6,7 +6,7 @@ export interface SendNotificationParams {
   to: string;
   title?: string;
   body?: string;
-  data?: object;
+  data?: Record<string, unknown>;
 }
 
 export const sendPushNotification = async ({

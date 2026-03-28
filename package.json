@@ -10,6 +10,7 @@
     "migration:revert": "bunx --bun typeorm migration:revert -d ./config/data-source.ts",
     "seed:categories": "bun run scripts/seed-categories.ts",
     "seed:test-data": "bun run scripts/seed-test-data.ts",
+    "check:installments": "bun run scripts/check-installments.ts",
     "db:clear": "bun run scripts/clear-db.ts"
   },
   "devDependencies": {
@@ -18,6 +19,7 @@
     "@types/cors": "^2.8.19",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
+    "@types/node-cron": "^3.0.11",
     "bcrypt": "^6.0.0",
     "jsonwebtoken": "^9.0.3",
     "ts-node": "^10.9.2"
@@ -33,6 +35,7 @@
     "expo-server-sdk": "^6.1.0",
     "express": "^5.2.1",
     "morgan": "^1.10.1",
+    "node-cron": "^4.2.1",
     "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.28",
