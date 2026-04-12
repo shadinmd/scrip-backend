@@ -2,6 +2,8 @@ import type { Request, Response } from "express";
 import { AppDataSource } from "../config/data-source";
 import { Loan } from "../entity/loan.entity";
 import { LoanInstallment } from "../entity/loan-installment.entity";
+import { Transaction } from "../entity/transaction.entity";
+import { Account } from "../entity/account.entity";
 import { getPaginationMetadata } from "../utils/pagination";
 
 const loanRepository = AppDataSource.getRepository(Loan);
@@ -28,6 +30,7 @@ export const getLoans = async (req: Request, res: Response) => {
       metadata,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -46,6 +49,7 @@ export const getLoan = async (req: Request, res: Response) => {
 
     res.json(loan);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -78,6 +82,7 @@ export const createLoan = async (req: Request, res: Response) => {
 
     res.status(201).json(result);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -171,20 +176,28 @@ export const deleteLoan = async (req: Request, res: Response) => {
     await loanRepository.remove(loan);
     res.json({ message: "Loan deleted successfully" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
 
 export const toggleInstallmentPaid = async (req: Request, res: Response) => {
+  const queryRunner = AppDataSource.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+
   try {
     const { installmentId } = req.params;
+    const { create_transaction, accountId } = req.body;
+    const userId = req.user!.id;
 
-    const installment = await installmentRepository.findOne({
+    const installment = await queryRunner.manager.findOne(LoanInstallment, {
       where: { id: parseInt(installmentId) },
       relations: ["loan", "loan.installments"],
     });
 
-    if (!installment || installment.loan.userId !== req.user?.id) {
+    if (!installment || installment.loan.userId !== userId) {
+      await queryRunner.rollbackTransaction();
       return res.status(404).json({ message: "Installment not found" });
     }
 
@@ -200,6 +213,7 @@ export const toggleInstallmentPaid = async (req: Request, res: Response) => {
         .slice(0, currentIndex)
         .find((inst) => !inst.isPaid);
       if (previousUnpaid) {
+        await queryRunner.rollbackTransaction();
         return res.status(400).json({
           message:
             "Cannot pay this installment until all previous installments are paid",
@@ -210,6 +224,7 @@ export const toggleInstallmentPaid = async (req: Request, res: Response) => {
         .slice(currentIndex + 1)
         .find((inst) => inst.isPaid);
       if (laterPaid) {
+        await queryRunner.rollbackTransaction();
         return res.status(400).json({
           message:
             "Cannot unmark this installment as unpaid while later installments are already paid",
@@ -217,12 +232,69 @@ export const toggleInstallmentPaid = async (req: Request, res: Response) => {
       }
     }
 
+    const wasPaidBefore = installment.isPaid;
     installment.isPaid = !installment.isPaid;
-    await installmentRepository.save(installment);
+    await queryRunner.manager.save(installment);
 
+    if (!wasPaidBefore && installment.isPaid) {
+      // marking as PAID
+      if (create_transaction) {
+        const account = await queryRunner.manager.findOne(Account, {
+          where: { id: accountId, userId },
+        });
+
+        if (!account) {
+          throw new Error("Account not found");
+        }
+
+        const transaction = queryRunner.manager.create(Transaction, {
+          amount: installment.amount,
+          type: "debit",
+          description: `Installment payment for ${installment.loan.name}`,
+          date: installment.date,
+          accountId: accountId,
+          userId: userId,
+          installmentId: installment.id,
+        });
+
+        // Update account balance
+        account.balance =
+          parseFloat(account.balance.toString()) -
+          parseFloat(installment.amount.toString());
+
+        await queryRunner.manager.save(transaction);
+        await queryRunner.manager.save(account);
+      }
+    } else if (wasPaidBefore && !installment.isPaid) {
+      // marking as UNPAID: Find and delete the linked transaction if any
+      const transaction = await queryRunner.manager.findOne(Transaction, {
+        where: { installmentId: installment.id, userId },
+      });
+
+      if (transaction) {
+        const account = await queryRunner.manager.findOne(Account, {
+          where: { id: transaction.accountId, userId },
+        });
+
+        if (account) {
+          // Revert balance (add back the debit amount)
+          account.balance =
+            parseFloat(account.balance.toString()) +
+            parseFloat(transaction.amount.toString());
+          await queryRunner.manager.save(account);
+        }
+
+        await queryRunner.manager.remove(transaction);
+      }
+    }
+
+    await queryRunner.commitTransaction();
     res.json(installment);
   } catch (error) {
+    await queryRunner.rollbackTransaction();
     console.error("Toggle paid error:", error);
     res.status(500).json({ message: "Something went wrong" });
+  } finally {
+    await queryRunner.release();
   }
 };

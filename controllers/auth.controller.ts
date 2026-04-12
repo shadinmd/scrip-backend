@@ -30,6 +30,7 @@ export const register = async (req: Request, res: Response) => {
 
     res.status(201).json({ message: "User created successfully" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -59,6 +60,7 @@ export const login = async (req: Request, res: Response) => {
 
     res.json({ accessToken, refreshToken });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -107,6 +109,7 @@ export const revoke = async (req: Request, res: Response) => {
 
     res.json({ message: "Tokens revoked successfully" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };

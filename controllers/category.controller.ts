@@ -24,6 +24,7 @@ export const getCategories = async (req: Request, res: Response) => {
       metadata,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -39,6 +40,7 @@ export const getCategory = async (req: Request, res: Response) => {
     }
     res.json(category);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -62,6 +64,7 @@ export const createCategory = async (req: Request, res: Response) => {
 
     res.status(201).json(category);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -93,6 +96,7 @@ export const updateCategory = async (req: Request, res: Response) => {
     await categoryRepository.save(category);
     res.json(category);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -110,6 +114,7 @@ export const deleteCategory = async (req: Request, res: Response) => {
     await categoryRepository.remove(category);
     res.json({ message: "Category deleted successfully" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };

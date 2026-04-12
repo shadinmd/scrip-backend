@@ -13,6 +13,7 @@ import {
   createLoanSchema,
   updateLoanSchema,
   getLoanSchema,
+  toggleInstallmentPaidSchema,
 } from "../validations/loan.validation";
 import { paginationQuerySchema } from "../validations/common.validation";
 
@@ -25,6 +26,10 @@ router.get("/:id", validate(getLoanSchema), getLoan);
 router.post("/", validate(createLoanSchema), createLoan);
 router.put("/:id", validate(updateLoanSchema), updateLoan);
 router.delete("/:id", validate(getLoanSchema), deleteLoan);
-router.patch("/installments/:installmentId/toggle-paid", toggleInstallmentPaid);
+router.patch(
+  "/installments/:installmentId/toggle-paid",
+  validate(toggleInstallmentPaidSchema),
+  toggleInstallmentPaid,
+);
 
 export default router;
