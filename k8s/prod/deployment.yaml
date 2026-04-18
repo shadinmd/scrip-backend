@@ -4,7 +4,7 @@ metadata:
   name: scrip-backend-prod
   namespace: scrip-prod
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: scrip-backend-prod

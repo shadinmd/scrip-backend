@@ -78,6 +78,7 @@ export const getTransactions = async (req: Request, res: Response) => {
       metadata,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -177,6 +178,7 @@ export const getTransaction = async (req: Request, res: Response) => {
     }
     res.json(transaction);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -232,6 +234,7 @@ export const createTransaction = async (req: Request, res: Response) => {
     res.status(201).json(transaction);
   } catch (error) {
     await queryRunner.rollbackTransaction();
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   } finally {
     await queryRunner.release();
@@ -377,6 +380,7 @@ export const deleteTransaction = async (req: Request, res: Response) => {
     res.json({ message: "Transaction deleted successfully" });
   } catch (error) {
     await queryRunner.rollbackTransaction();
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   } finally {
     await queryRunner.release();

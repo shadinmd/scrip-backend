@@ -25,6 +25,7 @@ export const getAccounts = async (req: Request, res: Response) => {
       metadata,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -40,6 +41,7 @@ export const getAccount = async (req: Request, res: Response) => {
     }
     res.json(account);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -50,7 +52,6 @@ export const createAccount = async (req: Request, res: Response) => {
     const userId = req.user!.id;
 
     if (isDefault) {
-      // Unset existing default account
       await accountRepository.update(
         { userId, isDefault: true },
         { isDefault: false },
@@ -67,6 +68,7 @@ export const createAccount = async (req: Request, res: Response) => {
     await accountRepository.save(account);
     res.status(201).json(account);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -100,6 +102,7 @@ export const updateAccount = async (req: Request, res: Response) => {
     await accountRepository.save(account);
     res.json(account);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
@@ -122,6 +125,7 @@ export const deleteAccount = async (req: Request, res: Response) => {
     await accountRepository.remove(account);
     res.json({ message: "Account deleted successfully" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };

@@ -68,3 +68,26 @@ export const getLoanSchema = z.object({
     id: z.string().regex(/^\d+$/, "ID must be a number"),
   }),
 });
+
+export const toggleInstallmentPaidSchema = z.object({
+  params: z.object({
+    installmentId: z.string().regex(/^\d+$/, "ID must be a number"),
+  }),
+  body: z
+    .object({
+      create_transaction: z.boolean().optional().default(false),
+      accountId: z.number().int().positive().optional(),
+    })
+    .refine(
+      (data) => {
+        if (data.create_transaction && !data.accountId) {
+          return false;
+        }
+        return true;
+      },
+      {
+        message: "Account ID is required if create_transaction is true",
+        path: ["accountId"],
+      },
+    ),
+});

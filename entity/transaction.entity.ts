@@ -10,6 +10,7 @@ import {
 import { User } from "./user.entity";
 import { Category } from "./category.entity";
 import { Account } from "./account.entity";
+import { LoanInstallment } from "./loan-installment.entity";
 
 @Entity("transactions")
 export class Transaction {
@@ -62,4 +63,11 @@ export class Transaction {
   @ManyToOne(() => User)
   @JoinColumn({ name: "user_id" })
   user!: User;
+
+  @Column({ name: "installment_id", nullable: true })
+  installmentId?: number | null;
+
+  @ManyToOne(() => LoanInstallment, { nullable: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "installment_id" })
+  installment?: LoanInstallment | null;
 }
