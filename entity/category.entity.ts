@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  type Relation,
 } from "typeorm";
 import { Transaction } from "./transaction.entity";
 
@@ -23,5 +24,5 @@ export class Category {
   updatedAt!: Date;
 
   @OneToMany(() => Transaction, (transaction) => transaction.category)
-  transactions!: Transaction[];
+  transactions!: Relation<Transaction>[];
 }

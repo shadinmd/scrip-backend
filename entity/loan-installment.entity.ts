@@ -7,6 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
   OneToOne,
+  type Relation,
 } from "typeorm";
 import { Loan } from "./loan.entity";
 import { Transaction } from "./transaction.entity";
@@ -30,10 +31,10 @@ export class LoanInstallment {
 
   @ManyToOne(() => Loan, (loan) => loan.installments, { onDelete: "CASCADE" })
   @JoinColumn({ name: "loan_id" })
-  loan!: Loan;
+  loan!: Relation<Loan>;
 
   @OneToOne(() => Transaction, (transaction) => transaction.installment)
-  transaction?: Transaction;
+  transaction?: Relation<Transaction>;
 
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;
