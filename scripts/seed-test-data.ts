@@ -121,30 +121,66 @@ const seedTestData = async () => {
 
     console.log(`Successfully seeded ${createdTransactions.length} transactions.`);
 
-    // 6. Seed Two Loans
-    const loan1 = loanRepository.create({
-      name: "Car Loan",
-      userId: user.id,
-      installments: [
-        { amount: 5000, date: format(subDays(today, 30), "yyyy-MM-dd"), isPaid: true },
-        { amount: 5000, date: format(today, "yyyy-MM-dd"), isPaid: false },
-        { amount: 5000, date: format(addMonths(today, 1), "yyyy-MM-dd"), isPaid: false },
-        { amount: 5000, date: format(addMonths(today, 2), "yyyy-MM-dd"), isPaid: false },
-      ],
-    });
+    // 6. Seed Two Loans and link paid installments to transactions
+    const loanData = [
+      {
+        name: "Car Loan",
+        installments: [
+          { amount: 5000, date: format(subDays(today, 30), "yyyy-MM-dd"), isPaid: true },
+          { amount: 5000, date: format(today, "yyyy-MM-dd"), isPaid: false },
+          { amount: 5000, date: format(addMonths(today, 1), "yyyy-MM-dd"), isPaid: false },
+          { amount: 5000, date: format(addMonths(today, 2), "yyyy-MM-dd"), isPaid: false },
+        ],
+      },
+      {
+        name: "Home Mortgage",
+        installments: [
+          { amount: 15000, date: format(subDays(today, 15), "yyyy-MM-dd"), isPaid: true },
+          { amount: 15000, date: format(addMonths(today, 1), "yyyy-MM-dd"), isPaid: false },
+          { amount: 15000, date: format(addMonths(today, 2), "yyyy-MM-dd"), isPaid: false },
+        ],
+      },
+    ];
 
-    const loan2 = loanRepository.create({
-      name: "Home Mortgage",
-      userId: user.id,
-      installments: [
-        { amount: 15000, date: format(subDays(today, 15), "yyyy-MM-dd"), isPaid: true },
-        { amount: 15000, date: format(addMonths(today, 1), "yyyy-MM-dd"), isPaid: false },
-        { amount: 15000, date: format(addMonths(today, 2), "yyyy-MM-dd"), isPaid: false },
-      ],
-    });
+    let additionalSpent = 0;
+    const loanTransactions: any[] = [];
 
-    await loanRepository.save([loan1, loan2]);
-    console.log("Successfully seeded 2 loans with installments.");
+    for (const l of loanData) {
+      const loan = loanRepository.create({
+        name: l.name,
+        userId: user.id,
+        installments: l.installments,
+      });
+      const savedLoan = await loanRepository.save(loan);
+
+      // For each paid installment, create a corresponding transaction
+      for (const installment of savedLoan.installments) {
+        if (installment.isPaid) {
+          additionalSpent += parseFloat(installment.amount.toString());
+          loanTransactions.push({
+            amount: installment.amount,
+            type: "debit",
+            description: `Loan Payment: ${l.name}`,
+            date: installment.date,
+            accountId: mainAccount.id,
+            userId: user.id,
+            installment: installment,
+            categoryId: categories.find((c) => c.name === "Debt")?.id || null,
+          });
+        }
+      }
+    }
+
+    if (loanTransactions.length > 0) {
+      const createdLoanTransactions = transactionRepository.create(loanTransactions);
+      await transactionRepository.save(createdLoanTransactions);
+    }
+
+    // Update account balance after loan transactions
+    mainAccount.balance = parseFloat(mainAccount.balance.toString()) - additionalSpent;
+    await accountRepository.save(mainAccount);
+
+    console.log("Successfully seeded loans and linked paid installments to transactions.");
 
     process.exit(0);
   } catch (error) {

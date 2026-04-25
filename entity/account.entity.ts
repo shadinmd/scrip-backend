@@ -7,6 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  type Relation,
 } from "typeorm";
 import { User } from "./user.entity";
 import { Transaction } from "./transaction.entity";
@@ -30,10 +31,10 @@ export class Account {
 
   @ManyToOne(() => User)
   @JoinColumn({ name: "user_id" })
-  user!: User;
+  user!: Relation<User>;
 
   @OneToMany(() => Transaction, (transaction) => transaction.account)
-  transactions!: Transaction[];
+  transactions!: Relation<Transaction>[];
 
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;

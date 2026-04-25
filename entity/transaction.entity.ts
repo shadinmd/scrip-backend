@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  type Relation,
 } from "typeorm";
 import { User } from "./user.entity";
 import { Category } from "./category.entity";
@@ -40,7 +41,7 @@ export class Transaction {
     nullable: true,
   })
   @JoinColumn({ name: "category_id" })
-  category?: Category | null;
+  category?: Relation<Category> | null;
 
   @Column({ name: "account_id" })
   accountId!: number;
@@ -49,7 +50,7 @@ export class Transaction {
     nullable: false,
   })
   @JoinColumn({ name: "account_id" })
-  account!: Account;
+  account!: Relation<Account>;
 
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;
@@ -62,12 +63,12 @@ export class Transaction {
 
   @ManyToOne(() => User)
   @JoinColumn({ name: "user_id" })
-  user!: User;
+  user!: Relation<User>;
 
   @Column({ name: "installment_id", nullable: true })
   installmentId?: number | null;
 
   @ManyToOne(() => LoanInstallment, { nullable: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "installment_id" })
-  installment?: LoanInstallment | null;
+  installment?: Relation<LoanInstallment> | null;
 }

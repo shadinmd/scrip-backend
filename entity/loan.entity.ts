@@ -7,6 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  type Relation,
 } from "typeorm";
 import { User } from "./user.entity";
 import { LoanInstallment } from "./loan-installment.entity";
@@ -22,14 +23,14 @@ export class Loan {
   @OneToMany(() => LoanInstallment, (installment) => installment.loan, {
     cascade: true,
   })
-  installments!: LoanInstallment[];
+  installments!: Relation<LoanInstallment>[];
 
   @Column({ name: "user_id" })
   userId!: number;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: "user_id" })
-  user!: User;
+  user!: Relation<User>;
 
   @CreateDateColumn({ name: "created_at" })
   createdAt!: Date;
