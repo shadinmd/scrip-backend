@@ -13,15 +13,46 @@ export const getLoans = async (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const showCompleted = req.query.showCompleted === "true";
     const skip = (page - 1) * limit;
+    const userId = req.user!.id;
 
-    const [loans, total] = await loanRepository.findAndCount({
-      where: { userId: req.user?.id },
-      relations: ["installments"],
-      order: { createdAt: "DESC" },
-      skip,
-      take: limit,
-    });
+    const queryBuilder = loanRepository
+      .createQueryBuilder("loan")
+      .leftJoinAndSelect("loan.installments", "installment")
+      .where("loan.userId = :userId", { userId });
+
+    if (!showCompleted) {
+      // Only show loans that have at least one unpaid installment
+      queryBuilder.andWhere((qb) => {
+        const subQuery = qb
+          .subQuery()
+          .select("1")
+          .from(LoanInstallment, "inst")
+          .where("inst.loanId = loan.id")
+          .andWhere("inst.isPaid = false")
+          .getQuery();
+        return "EXISTS " + subQuery;
+      });
+    }
+
+    // Add a hidden selection for sorting status: 1 for active, 0 for completed
+    queryBuilder.addSelect((qb) => {
+      return qb
+        .subQuery()
+        .select("CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END")
+        .from(LoanInstallment, "inst")
+        .where("inst.loanId = loan.id")
+        .andWhere("inst.isPaid = false");
+    }, "is_active_sort");
+
+    queryBuilder.orderBy("is_active_sort", "DESC");
+    queryBuilder.addOrderBy("loan.createdAt", "DESC");
+
+    const [loans, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
 
     const metadata = getPaginationMetadata(total, page, limit);
 
@@ -30,7 +61,7 @@ export const getLoans = async (req: Request, res: Response) => {
       metadata,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Get loans error:", error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
