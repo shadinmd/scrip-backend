@@ -204,15 +204,50 @@ export const deleteLoan = async (req: Request, res: Response) => {
       return res.status(404).json({ message: "Loan not found" });
     }
 
-    await loanRepository.remove(loan);
+    await queryRunner.remove(loan);
     res.json({ message: "Loan deleted successfully" });
-  } catch (error) {
+    } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Something went wrong" });
-  }
-};
+    }
+    };
 
-export const toggleInstallmentPaid = async (req: Request, res: Response) => {
+    export const getLoanProjections = async (req: Request, res: Response) => {
+    try {
+    const userId = req.user!.id;
+
+    const projections = await installmentRepository
+      .createQueryBuilder("installment")
+      .innerJoin("installment.loan", "loan")
+      .select("TO_CHAR(installment.date, 'YYYY-MM')", "month")
+      .addSelect("SUM(CAST(installment.amount AS DECIMAL))", "total")
+      .where("loan.userId = :userId", { userId })
+      .andWhere("installment.isPaid = false")
+      .groupBy("month")
+      .orderBy("month", "ASC")
+      .getRawMany();
+
+    const formattedData = projections.map((p) => {
+      const [year, month] = p.month.split("-");
+      const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+      return {
+        timestamp: date.getTime(),
+        value: parseFloat(p.total),
+        label: date.toLocaleDateString(undefined, {
+          month: "short",
+          year: "2-digit",
+        }),
+      };
+    });
+
+    res.json(formattedData);
+    } catch (error) {
+    console.error("Get loan projections error:", error);
+    res.status(500).json({ message: "Something went wrong" });
+    }
+    };
+
+    export const toggleInstallmentPaid = async (req: Request, res: Response) => {
   const queryRunner = AppDataSource.createQueryRunner();
   await queryRunner.connect();
   await queryRunner.startTransaction();
