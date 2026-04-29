@@ -17,8 +17,6 @@ import {
   deleteTransactionSchema,
 } from "../validations/transaction.validation";
 
-import { paginationQuerySchema } from "../validations/common.validation";
-
 const router = Router();
 
 router.use(authMiddleware);
