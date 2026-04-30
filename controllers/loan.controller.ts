@@ -206,14 +206,60 @@ export const deleteLoan = async (req: Request, res: Response) => {
 
     await queryRunner.remove(loan);
     res.json({ message: "Loan deleted successfully" });
-    } catch (error) {
+  } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Something went wrong" });
-    }
-    };
+  }
+};
 
-    export const getLoanProjections = async (req: Request, res: Response) => {
-    try {
+export const getInstallments = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const month = req.query.month as string | undefined; // format YYYY-MM
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = installmentRepository
+      .createQueryBuilder("installment")
+      .innerJoinAndSelect("installment.loan", "loan")
+      .where("loan.userId = :userId", { userId });
+
+    if (month) {
+      queryBuilder.andWhere("TO_CHAR(installment.date, 'YYYY-MM') = :month", {
+        month,
+      });
+    }
+
+    const [installments, total] = await queryBuilder
+      .orderBy("installment.date", "ASC")
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    const formattedData = installments.map((inst) => ({
+      id: inst.id,
+      amount: inst.amount,
+      date: inst.date,
+      loanId: inst.loanId,
+      isPaid: inst.isPaid,
+      loanName: inst.loan.name,
+    }));
+
+    const metadata = getPaginationMetadata(total, page, limit);
+
+    res.json({
+      data: formattedData,
+      metadata,
+    });
+  } catch (error) {
+    console.error("Get installments error:", error);
+    res.status(500).json({ message: "Something went wrong" });
+  }
+};
+
+export const getLoanProjections = async (req: Request, res: Response) => {
+  try {
     const userId = req.user!.id;
 
     const projections = await installmentRepository
@@ -237,17 +283,18 @@ export const deleteLoan = async (req: Request, res: Response) => {
           month: "short",
           year: "2-digit",
         }),
+        rawMonth: p.month,
       };
     });
 
     res.json(formattedData);
-    } catch (error) {
+  } catch (error) {
     console.error("Get loan projections error:", error);
     res.status(500).json({ message: "Something went wrong" });
-    }
-    };
+  }
+};
 
-    export const toggleInstallmentPaid = async (req: Request, res: Response) => {
+export const toggleInstallmentPaid = async (req: Request, res: Response) => {
   const queryRunner = AppDataSource.createQueryRunner();
   await queryRunner.connect();
   await queryRunner.startTransaction();
