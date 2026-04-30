@@ -6,6 +6,7 @@ import {
   updateLoan,
   deleteLoan,
   getLoanProjections,
+  getInstallments,
   toggleInstallmentPaid,
 } from "../controllers/loan.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
@@ -24,6 +25,7 @@ router.use(authMiddleware);
 
 router.get("/", validate(paginationQuerySchema), getLoans);
 router.get("/projections", getLoanProjections);
+router.get("/installments", getInstallments);
 router.get("/:id", validate(getLoanSchema), getLoan);
 router.post("/", validate(createLoanSchema), createLoan);
 router.put("/:id", validate(updateLoanSchema), updateLoan);
