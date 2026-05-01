@@ -261,31 +261,79 @@ export const getInstallments = async (req: Request, res: Response) => {
 export const getLoanProjections = async (req: Request, res: Response) => {
   try {
     const userId = req.user!.id;
+    const { startDate, endDate, isPaid } = req.query;
 
-    const projections = await installmentRepository
+    const queryBuilder = installmentRepository
       .createQueryBuilder("installment")
       .innerJoin("installment.loan", "loan")
       .select("TO_CHAR(installment.date, 'YYYY-MM')", "month")
+      .addSelect("installment.isPaid", "isPaid")
       .addSelect("SUM(CAST(installment.amount AS DECIMAL))", "total")
+      .addSelect("MAX(installment.date)", "lastDate")
       .where("loan.userId = :userId", { userId })
-      .andWhere("installment.isPaid = false")
       .groupBy("month")
-      .orderBy("month", "ASC")
-      .getRawMany();
+      .addGroupBy("installment.isPaid")
+      .orderBy("month", "ASC");
 
-    const formattedData = projections.map((p) => {
-      const [year, month] = p.month.split("-");
-      const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-      return {
-        timestamp: date.getTime(),
-        value: parseFloat(p.total),
-        label: date.toLocaleDateString(undefined, {
-          month: "short",
-          year: "2-digit",
-        }),
-        rawMonth: p.month,
-      };
-    });
+    if (startDate) {
+      queryBuilder.andWhere("installment.date >= :startDate", { startDate });
+    }
+    if (endDate) {
+      queryBuilder.andWhere("installment.date <= :endDate", { endDate });
+    }
+    if (isPaid !== undefined) {
+      queryBuilder.andWhere("installment.isPaid = :isPaid", {
+        isPaid: isPaid === "true",
+      });
+    }
+
+    const projections = await queryBuilder.getRawMany();
+
+    const grouped = projections.reduce((acc: any, p: any) => {
+      if (!acc[p.month]) {
+        acc[p.month] = { paid: 0, unpaid: 0, lastDate: p.lastDate };
+      }
+
+      // Track the latest date for this month across all entries
+      if (new Date(p.lastDate) > new Date(acc[p.month].lastDate)) {
+        acc[p.month].lastDate = p.lastDate;
+      }
+
+      const isPaidValue =
+        p.isPaid === true ||
+        p.isPaid === "true" ||
+        p.isPaid === "t" ||
+        p.isPaid === 1 ||
+        p.isPaid === "1";
+
+      if (isPaidValue) {
+        acc[p.month].paid += parseFloat(p.total);
+      } else {
+        acc[p.month].unpaid += parseFloat(p.total);
+      }
+      return acc;
+    }, {});
+
+    const formattedData = Object.entries(grouped).map(
+      ([month, data]: [string, any]) => {
+        const [year, m] = month.split("-");
+        const date = new Date(parseInt(year), parseInt(m) - 1, 1);
+        return {
+          timestamp: date.getTime(),
+          paid: data.paid,
+          unpaid: data.unpaid,
+          value: data.paid + data.unpaid,
+          lastDate: data.lastDate,
+          label: date.toLocaleDateString(undefined, {
+            month: "short",
+            year: "2-digit",
+          }),
+          rawMonth: month,
+        };
+      },
+    );
+
+    formattedData.sort((a, b) => a.timestamp - b.timestamp);
 
     res.json(formattedData);
   } catch (error) {
