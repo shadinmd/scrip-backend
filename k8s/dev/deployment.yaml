@@ -22,10 +22,7 @@ spec:
             - containerPort: 8000
           env:
             - name: NODE_ENV
-              valueFrom:
-                secretKeyRef:
-                  name: scrip-secrets
-                  key: env
+              value: "development"
             - name: PORT
               valueFrom:
                 secretKeyRef:
