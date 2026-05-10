@@ -1,0 +1,66 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths-ignore:
+      - 'k8s/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/shadinmd/scrip-backend:${{ github.sha }}
+            ghcr.io/shadinmd/scrip-backend:latest
+
+  update-manifest:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update Dev Manifest
+        if: github.ref == 'refs/heads/dev'
+        run: |
+          sed -i 's|image: ghcr.io/shadinmd/scrip-backend:.*|image: ghcr.io/shadinmd/scrip-backend:${{ github.sha }}|' k8s/dev/deployment.yaml
+          git config --global user.email "ci@scrip-backend.local"
+          git config --global user.name "ci-bot"
+          git commit -am "dev: update image to ${{ github.sha }}" || echo "no changes"
+          git push
+
+      - name: Update Prod Manifest
+        if: github.ref == 'refs/heads/main'
+        run: |
+          sed -i 's|image: ghcr.io/shadinmd/scrip-backend:.*|image: ghcr.io/shadinmd/scrip-backend:${{ github.sha }}|' k8s/prod/deployment.yaml
+          git config --global user.email "ci@scrip-backend.local"
+          git config --global user.name "ci-bot"
+          git commit -am "prod: update image to ${{ github.sha }}" || echo "no changes"
+          git push
